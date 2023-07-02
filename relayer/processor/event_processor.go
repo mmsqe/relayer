@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -87,21 +88,34 @@ func (ep EventProcessor) Run(ctx context.Context) error {
 	runCtx, runCtxCancel := context.WithCancel(ctx)
 	for _, pathProcessor := range ep.pathProcessors {
 		pathProcessor := pathProcessor
-		eg.Go(func() error {
+		eg.Go(func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.Errorf("panic-path: %v", r)
+				}
+			}()
 			pathProcessor.Run(runCtx, runCtxCancel)
-			return nil
+			return
 		})
 	}
 	for _, chainProcessor := range ep.chainProcessors {
 		chainProcessor := chainProcessor
-		eg.Go(func() error {
-			err := chainProcessor.Run(runCtx, ep.initialBlockHistory)
+		eg.Go(func() (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					err = errors.Errorf("panic-chain: %v", r)
+				}
+			}()
+			err = chainProcessor.Run(runCtx, ep.initialBlockHistory)
 			// Signal the other chain processors to exit.
 			runCtxCancel()
-			return err
+			return
 		})
 	}
 	err := eg.Wait()
+	if err != nil {
+		panic(err)
+	}
 	runCtxCancel()
 	return err
 }
