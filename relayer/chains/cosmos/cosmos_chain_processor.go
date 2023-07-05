@@ -73,7 +73,7 @@ const (
 	queryTimeout                = 5 * time.Second
 	blockResultsQueryTimeout    = 2 * time.Minute
 	latestHeightQueryRetryDelay = 1 * time.Second
-	latestHeightQueryRetries    = 5
+	latestHeightQueryRetries    = 10
 
 	defaultMinQueryLoopDuration      = 1 * time.Second
 	defaultBalanceUpdateWaitDuration = 60 * time.Second
