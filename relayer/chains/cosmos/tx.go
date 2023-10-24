@@ -780,6 +780,7 @@ const (
 	prefixAcknowledgement
 	prefixTimeout
 	prefixTimeoutOnClose
+	prefixTransfer
 )
 
 var messageMap = map[reflect.Type]int{
@@ -801,6 +802,7 @@ var messageMap = map[reflect.Type]int{
 	reflect.TypeOf((*chantypes.MsgAcknowledgement)(nil)):       prefixAcknowledgement,
 	reflect.TypeOf((*chantypes.MsgTimeout)(nil)):               prefixTimeout,
 	reflect.TypeOf((*chantypes.MsgTimeoutOnClose)(nil)):        prefixTimeoutOnClose,
+	reflect.TypeOf((*transfertypes.MsgTransfer)(nil)):          prefixTransfer,
 }
 
 func addLengthPrefix(prefix int, input []byte) []byte {
