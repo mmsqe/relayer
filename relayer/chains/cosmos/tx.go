@@ -2286,7 +2286,7 @@ func (cc *CosmosProvider) CalculateGas(ctx context.Context, txf tx.Factory, sign
 
 // TxFactory instantiates a new tx factory with the appropriate configuration settings for this chain.
 func (cc *CosmosProvider) TxFactory() tx.Factory {
-	return tx.Factory{}.
+	f := tx.Factory{}.
 		WithAccountRetriever(cc).
 		WithChainID(cc.PCfg.ChainID).
 		WithTxConfig(cc.Cdc.TxConfig).
@@ -2294,6 +2294,18 @@ func (cc *CosmosProvider) TxFactory() tx.Factory {
 		WithGasPrices(cc.PCfg.GasPrices).
 		WithKeybase(cc.Keybase).
 		WithSignMode(cc.PCfg.SignMode())
+	gasPrices, _ := convertCoins(cc.PCfg.GasPrices)
+	extOpts := cc.PCfg.ExtensionOptions
+	if len(gasPrices) > 0 && len(extOpts) > 0 {
+		extAmount, ok := sdkmath.NewIntFromString(extOpts[0].Value)
+		if ok {
+			if gasPrices[0].Amount.GT(extAmount) {
+				gasPrice := sdk.NewCoin(gasPrices[0].Denom, extAmount)
+				f = f.WithGasPrices(gasPrice.String())
+			}
+		}
+	}
+	return f
 }
 
 // SignMode returns the SDK sign mode type reflective of the specified sign mode in the config file.
