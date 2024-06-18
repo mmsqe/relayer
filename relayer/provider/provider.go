@@ -32,6 +32,7 @@ type ProviderConfig interface {
 	Validate() error
 	BroadcastMode() BroadcastMode
 	BroadcastMaxMsgNum() uint64
+	HasPrecompiledContractAddress() bool
 }
 
 type RelayerMessage interface {

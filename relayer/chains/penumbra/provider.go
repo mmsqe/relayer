@@ -80,6 +80,10 @@ func (pc PenumbraProviderConfig) BroadcastMaxMsgNum() uint64 {
 	return pc.MaxMsgNum
 }
 
+func (pc PenumbraProviderConfig) HasPrecompiledContractAddress() bool {
+	return false
+}
+
 // NewProvider validates the PenumbraProviderConfig, instantiates a ChainClient and then instantiates a CosmosProvider
 func (pc PenumbraProviderConfig) NewProvider(log *zap.Logger, homepath string, debug bool, chainName string) (provider.ChainProvider, error) {
 	if err := pc.Validate(); err != nil {

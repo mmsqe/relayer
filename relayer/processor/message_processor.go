@@ -329,21 +329,25 @@ func (mp *messageProcessor) trackAndSendMessages(
 	src, dst *pathEndRuntime,
 	needsClientUpdate bool,
 ) error {
-	broadcastBatch := dst.chainProvider.ProviderConfig().BroadcastMode() == provider.BroadcastModeBatch
-	maxMsgNum := dst.chainProvider.ProviderConfig().BroadcastMaxMsgNum()
-	if maxMsgNum < 2 && maxMsgNum != 0 {
-		maxMsgNum = 2
+	cfg := dst.chainProvider.ProviderConfig()
+	broadcastBatch := cfg.BroadcastMode() == provider.BroadcastModeBatch
+	maxMsgNum := cfg.BroadcastMaxMsgNum()
+	noPrecompiled := !cfg.HasPrecompiledContractAddress()
+	if noPrecompiled {
+		if maxMsgNum < 2 && maxMsgNum != 0 {
+			maxMsgNum = 2
+		}
+	} else {
+		maxMsgNum = 0
 	}
 	var batch []messageToTrack
-
 	for _, t := range mp.trackers() {
-
-		retries := dst.trackProcessingMessage(t)
 		if t.assembledMsg() == nil {
 			dst.trackFinishedProcessingMessage(t)
 			continue
 		}
 
+		retries := dst.trackProcessingMessage(t)
 		ordered := false
 		if m, ok := t.(packetMessageToTrack); ok && m.msg.info.ChannelOrder == chantypes.ORDERED.String() {
 			ordered = true
@@ -351,7 +355,7 @@ func (mp *messageProcessor) trackAndSendMessages(
 
 		if broadcastBatch && (retries == 0 || ordered) {
 			batch = append(batch, t)
-			if len(batch) >= int(maxMsgNum) && maxMsgNum != 0 {
+			if maxMsgNum != 0 && len(batch) >= int(maxMsgNum) {
 				go mp.sendBatchMessages(ctx, src, dst, batch)
 				batch = nil
 			}

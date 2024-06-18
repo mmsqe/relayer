@@ -97,6 +97,10 @@ func (pc CosmosProviderConfig) BroadcastMaxMsgNum() uint64 {
 	return pc.MaxMsgNum
 }
 
+func (pc CosmosProviderConfig) HasPrecompiledContractAddress() bool {
+	return pc.PrecompiledContractAddress != ""
+}
+
 // NewProvider validates the CosmosProviderConfig, instantiates a ChainClient and then instantiates a CosmosProvider
 func (pc CosmosProviderConfig) NewProvider(log *zap.Logger, homepath string, debug bool, chainName string) (provider.ChainProvider, error) {
 	if err := pc.Validate(); err != nil {
