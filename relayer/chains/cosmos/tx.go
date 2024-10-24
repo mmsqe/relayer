@@ -2047,6 +2047,7 @@ func (cc *CosmosProvider) calculateEvmGas(ctx context.Context, arg *evmtypes.Tra
 
 func (cc *CosmosProvider) getPayloads(to common.Address, msgs []sdk.Msg) ([]byte, error) {
 	caller := sdk.AccAddress(to.Bytes()).String()
+	payee := common.Address{}
 	payloads := make([][]byte, 0, len(msgs))
 	for _, m := range msgs {
 		t := reflect.TypeOf(m)
@@ -2059,6 +2060,13 @@ func (cc *CosmosProvider) getPayloads(to common.Address, msgs []sdk.Msg) ([]byte
 			f := elem.FieldByName("Signer")
 			if f.IsValid() && f.CanSet() && f.Kind() == reflect.String {
 				original := f.String()
+				if len(payee) > 0 {
+					origin, err := sdk.AccAddressFromBech32(original)
+					if err != nil {
+						return nil, err
+					}
+					payee = common.BytesToAddress(origin.Bytes())
+				}
 				defer f.SetString(original)
 				f.SetString(caller)
 			}
@@ -2073,7 +2081,7 @@ func (cc *CosmosProvider) getPayloads(to common.Address, msgs []sdk.Msg) ([]byte
 		}
 		payloads = append(payloads, payload)
 	}
-	return relayerCallerABI.Pack("batchCall", payloads)
+	return relayerCallerABI.Pack("batchCall", payee, payloads)
 }
 
 // CalculateGas simulates a tx to generate the appropriate gas settings before broadcasting a tx.
