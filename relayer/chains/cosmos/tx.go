@@ -2055,10 +2055,18 @@ func (cc *CosmosProvider) getPayloads(to common.Address, msgs []sdk.Msg) ([]byte
 			return nil, fmt.Errorf("invalid type %T", m)
 		}
 		elem := reflect.ValueOf(m).Elem()
+		signer := common.Address{}
 		if elem.Kind() == reflect.Struct {
 			f := elem.FieldByName("Signer")
 			if f.IsValid() && f.CanSet() && f.Kind() == reflect.String {
 				original := f.String()
+				if len(signer) > 0 {
+					origin, err := sdk.AccAddressFromBech32(original)
+					if err != nil {
+						return nil, err
+					}
+					signer = common.BytesToAddress(origin.Bytes())
+				}
 				defer f.SetString(original)
 				f.SetString(caller)
 			}
@@ -2067,7 +2075,7 @@ func (cc *CosmosProvider) getPayloads(to common.Address, msgs []sdk.Msg) ([]byte
 		if err != nil {
 			return nil, err
 		}
-		payload, err := relayerABI.Pack(method, input)
+		payload, err := relayerABI.Pack(method, signer, input)
 		if err != nil {
 			return nil, err
 		}
