@@ -857,12 +857,15 @@ type MsgWithSigners interface {
 	GetSigners() []sdk.AccAddress
 }
 
-func extractSigners(msg proto.Message) []sdk.AccAddress {
-	var signers []sdk.AccAddress
-	if i, ok := msg.(MsgWithSigners); ok {
-		signers = i.GetSigners()
+func (cc *CosmosProvider) extractSigners(msg proto.Message) (*common.Address, error) {
+	signers, _, err := cc.Cdc.Marshaler.GetMsgV1Signers(msg)
+	if err != nil {
+		return nil, fmt.Errorf("fail to get signers %w", err)
 	}
-	return signers
+	if len(signers) != 1 {
+		return nil, sdkerrors.Wrapf(legacyerrors.ErrUnknownRequest, "invalid signers length %d", len(signers))
+	}
+	return convertAddress(sdk.AccAddress(signers[0]).String())
 }
 
 func (cc *CosmosProvider) buildEvmMessages(
@@ -896,11 +899,7 @@ func (cc *CosmosProvider) buildEvmMessages(
 	blockNumber := new(big.Int)
 
 	msgs := txb.GetTx().GetMsgs()
-	signers := extractSigners(msgs[0])
-	if len(signers) != 1 {
-		return nil, 0, sdk.Coins{}, sdkerrors.Wrapf(legacyerrors.ErrUnknownRequest, "invalid signers length %d", len(signers))
-	}
-	from, err := convertAddress(signers[0].String())
+	from, err := cc.extractSigners(msgs[0])
 	if err != nil {
 		return nil, 0, sdk.Coins{}, err
 	}
@@ -2073,11 +2072,7 @@ func (cc *CosmosProvider) CalculateGas(ctx context.Context, txf tx.Factory, sign
 			return txtypes.SimulateResponse{}, 0, err
 		}
 		gasPrice := gasPrices[0].Amount.BigInt()
-		signers := extractSigners(msgs[0])
-		if len(signers) == 0 {
-			return txtypes.SimulateResponse{}, 0, fmt.Errorf("invalid signers length %d", len(signers))
-		}
-		from, err := convertAddress(signers[0].String())
+		from, err := cc.extractSigners(msgs[0])
 		if err != nil {
 			return txtypes.SimulateResponse{}, 0, err
 		}
