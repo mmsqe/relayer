@@ -250,7 +250,7 @@ func setupDebugServer(cmd *cobra.Command, a *appState, err error) error {
 		return err
 	}
 
-	enableDebugServer := flagEnableDebugServer == true || debugAddrFlag != ""
+	enableDebugServer := a.config.Global.EnableDebugServer || flagEnableDebugServer || debugAddrFlag != ""
 
 	if enableDebugServer == false {
 		a.log.Info("Debug server is disabled you can enable it using --enable-debug-server flag")

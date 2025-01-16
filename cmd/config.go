@@ -489,6 +489,7 @@ func DefaultConfig(memo string) *Config {
 // GlobalConfig describes any global relayer settings
 type GlobalConfig struct {
 	ApiListenPort     string `yaml:"api-listen-addr,omitempty" json:"api-listen-addr,omitempty"`
+	EnableDebugServer bool   `yaml:"enable-debug-server,omitempty" json:"enable-debug-server,omitempty"`
 	DebugListenPort   string `yaml:"debug-listen-addr" json:"debug-listen-addr"`
 	MetricsListenPort string `yaml:"metrics-listen-addr" json:"metrics-listen-addr"`
 	Timeout           string `yaml:"timeout" json:"timeout"`
