@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	sdkmath "cosmossdk.io/math"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
+	transfertypes "github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
 	relayerinterchaintest "github.com/cosmos/relayer/v2/interchaintest"
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/cosmos/relayer/v2/relayer/processor"
@@ -151,11 +151,8 @@ func TestScenarioPathFilterAllow(t *testing.T) {
 	require.NoError(t, eg.Wait())
 
 	// Trace IBC Denom
-	gaiaDenomTrace := transfertypes.ParseDenomTrace(transfertypes.GetPrefixedDenom(osmosisChannel.PortID, osmosisChannel.ChannelID, gaia.Config().Denom))
-	gaiaIbcDenom := gaiaDenomTrace.IBCDenom()
-
-	osmosisDenomTrace := transfertypes.ParseDenomTrace(transfertypes.GetPrefixedDenom(gaiaChannel.PortID, gaiaChannel.ChannelID, osmosis.Config().Denom))
-	osmosisIbcDenom := osmosisDenomTrace.IBCDenom()
+	gaiaIbcDenom := transfertypes.NewDenom(gaia.Config().Denom, transfertypes.NewHop(osmosisChannel.PortID, osmosisChannel.ChannelID)).IBCDenom()
+	osmosisIbcDenom := transfertypes.NewDenom(osmosis.Config().Denom, transfertypes.NewHop(gaiaChannel.PortID, gaiaChannel.ChannelID)).IBCDenom()
 
 	// Test destination wallets have increased funds
 	gaiaIBCBalance, err := osmosis.GetBalance(ctx, gaiaDstAddress, gaiaIbcDenom)
@@ -309,11 +306,8 @@ func TestScenarioPathFilterDeny(t *testing.T) {
 	require.NoError(t, eg.Wait())
 
 	// Trace IBC Denom
-	gaiaDenomTrace := transfertypes.ParseDenomTrace(transfertypes.GetPrefixedDenom(osmosisChannel.PortID, osmosisChannel.ChannelID, gaia.Config().Denom))
-	gaiaIbcDenom := gaiaDenomTrace.IBCDenom()
-
-	osmosisDenomTrace := transfertypes.ParseDenomTrace(transfertypes.GetPrefixedDenom(gaiaChannel.PortID, gaiaChannel.ChannelID, osmosis.Config().Denom))
-	osmosisIbcDenom := osmosisDenomTrace.IBCDenom()
+	gaiaIbcDenom := transfertypes.NewDenom(gaia.Config().Denom, transfertypes.NewHop(osmosisChannel.PortID, osmosisChannel.ChannelID)).IBCDenom()
+	osmosisIbcDenom := transfertypes.NewDenom(osmosis.Config().Denom, transfertypes.NewHop(gaiaChannel.PortID, gaiaChannel.ChannelID)).IBCDenom()
 
 	// Test destination wallets do not have increased funds
 	gaiaIBCBalance, err := osmosis.GetBalance(ctx, gaiaDstAddress, gaiaIbcDenom)

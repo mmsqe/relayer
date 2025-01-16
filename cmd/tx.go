@@ -10,7 +10,7 @@ import (
 	"github.com/avast/retry-go/v4"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/cosmos/relayer/v2/relayer/processor"
 	"github.com/cosmos/relayer/v2/relayer/provider"
@@ -1112,13 +1112,13 @@ $ %s tx raw send ibc-0 ibc-1 100000stake cosmos1skjwj5whet0lpe65qaq4rpq03hjxlwd9
 					srcChannelID, src, pathConnectionID)
 			}
 
-			dts, err := src.ChainProvider.QueryDenomTraces(cmd.Context(), 0, 100, srch)
+			dts, err := src.ChainProvider.QueryDenoms(cmd.Context(), 0, 100, srch)
 			if err != nil {
 				return err
 			}
 
 			for _, d := range dts {
-				if amount.Denom == d.GetFullDenomPath() {
+				if amount.Denom == d.Path() {
 					amount = sdk.NewCoin(d.IBCDenom(), amount.Amount)
 				}
 			}
@@ -1214,7 +1214,7 @@ func ensureKeysExist(chains map[string]*relayer.Chain) error {
 	return nil
 }
 
-// MsgRegisterCounterpartyPayee registers the counterparty_payee
+// registerCounterpartyCmd registers the counterparty_payee
 func registerCounterpartyCmd(a *appState) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "register-counterparty chain_name channel_id port_id relay_addr counterparty_payee",

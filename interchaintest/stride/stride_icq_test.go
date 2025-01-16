@@ -7,8 +7,8 @@ import (
 
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
-	transfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	transfertypes "github.com/cosmos/ibc-go/v9/modules/apps/transfer/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
 	relayerinterchaintest "github.com/cosmos/relayer/v2/interchaintest"
 	rlystride "github.com/cosmos/relayer/v2/relayer/chains/cosmos/stride"
 	"github.com/strangelove-ventures/interchaintest/v8"
@@ -183,11 +183,11 @@ func TestScenarioStrideICAandICQ(t *testing.T) {
 
 	logger.Info("TestScenarioStrideICAandICQ [7]")
 
-	atomIBCDenom := transfertypes.ParseDenomTrace(
-		transfertypes.GetPrefixedDenom(
+	atomIBCDenom := transfertypes.NewDenom(
+		gaiaCfg.Denom,
+		transfertypes.NewHop(
 			gaiaChans[0].Counterparty.PortID,
 			gaiaChans[0].Counterparty.ChannelID,
-			gaiaCfg.Denom,
 		),
 	).IBCDenom()
 

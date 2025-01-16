@@ -9,7 +9,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	chantypes "github.com/cosmos/ibc-go/v8/modules/core/04-channel/types"
+	chantypes "github.com/cosmos/ibc-go/v9/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	"github.com/spf13/cobra"
@@ -34,6 +34,7 @@ func queryCmd(a *appState) *cobra.Command {
 		queryUnrelayedAcknowledgements(a),
 		lineBreakCommand(),
 		queryBalanceCmd(a),
+		queryBalancesCmd(a),
 		queryHeaderCmd(a),
 		queryNodeStateCmd(a),
 		queryTxs(a),
@@ -94,7 +95,7 @@ $ %s q ibc-denoms ibc-0`,
 				return err
 			}
 
-			res, err := chain.ChainProvider.QueryDenomTraces(cmd.Context(), 0, 100, h)
+			res, err := chain.ChainProvider.QueryDenoms(cmd.Context(), 0, 100, h)
 			if err != nil {
 				return err
 			}
@@ -125,7 +126,7 @@ $ %s q denom-trace osmosis 9BBA9A1C257E971E38C1422780CE6F0B0686F0A3085E2D61118D9
 				return errChainNotFound(args[0])
 			}
 
-			res, err := c.ChainProvider.QueryDenomTrace(cmd.Context(), args[1])
+			res, err := c.ChainProvider.QueryDenom(cmd.Context(), args[1])
 			if err != nil {
 				return err
 			}
@@ -322,6 +323,77 @@ $ %s query balance ibc-0 testkey`,
 
 	cmd = addOutputFlag(a.viper, cmd)
 	cmd = ibcDenomFlags(a.viper, cmd)
+	return cmd
+}
+
+func queryBalancesCmd(a *appState) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "balances [chain-name...]",
+		Short: "query the relayer's account balances on given networks by chain-ID",
+		Args:  withUsage(cobra.MinimumNArgs(1)),
+		Example: strings.TrimSpace(fmt.Sprintf(`
+$ %s query balances ibc-0 ibc-1
+$ %s query balances ibc-0 ibc-1 --key-name=test`,
+			appName, appName,
+		)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			keyName, _ := cmd.Flags().GetString(flagKeyName)
+
+			data := map[string]string{}
+			for _, arg := range args {
+				chain, ok := a.config.Chains[arg]
+				if !ok {
+					return errChainNotFound(args[0])
+				}
+
+				chainKey := keyName
+				if chainKey == "" {
+					chainKey = chain.ChainProvider.Key()
+				}
+
+				showDenoms, err := cmd.Flags().GetBool(flagIBCDenoms)
+				if err != nil {
+					return err
+				}
+
+				if !chain.ChainProvider.KeyExists(chainKey) {
+					return errKeyDoesntExist(chainKey)
+				}
+				addr, err := chain.ChainProvider.ShowAddress(chainKey)
+				if err != nil {
+					return err
+				}
+
+				coins, err := relayer.QueryBalance(cmd.Context(), chain, addr, showDenoms)
+				if err != nil {
+					return err
+				}
+
+				data[addr] = coins.String()
+			}
+			jsonOutput, err := json.Marshal(data)
+			if err != nil {
+				return err
+			}
+
+			output, _ := cmd.Flags().GetString(flagOutput)
+			switch output {
+			case formatJson:
+				fmt.Fprint(cmd.OutOrStdout(), string(jsonOutput))
+			case formatLegacy:
+				fallthrough
+			default:
+				for addr, balance := range data {
+					fmt.Fprintf(cmd.OutOrStdout(), "address {%s} balance {%s} \n", addr, balance)
+				}
+			}
+			return nil
+		},
+	}
+
+	cmd = addOutputFlag(a.viper, cmd)
+	cmd = ibcDenomFlags(a.viper, cmd)
+	cmd = keyNameFlag(a.viper, cmd)
 	return cmd
 }
 
